@@ -1,8 +1,9 @@
 import React from 'react';
 import './App.css';
-import { Event } from './models/Event';
+import { Event, SourceEvent, SourceType, UpdateKbOperationDTOAdd } from './models/Event';
 import { QaManager } from "./components/QaManager";
 import { WebChat } from "./components/WebChat";
+/*global chrome*/
 
 function App(props) {
   const tempUserId = 'TempUserId';
@@ -50,7 +51,19 @@ function App(props) {
   };
 
   const clickSyncToThis = async (knowledgeBaseId) => {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      const activeTab = tabs[0];
+ 
+      let value = new SourceEvent();
+      value.KnowledgeBaseId = knowledgeBaseId;
+      value.DTOAdd = new UpdateKbOperationDTOAdd();
+      value.DTOAdd.urls = [activeTab.url];
+      value.Id = activeTab.url;
+      value.Description = activeTab.title;
+      value.Type = SourceType.Url;
 
+      pushEvent(Event.AddSource, value, true);
+   });
   };
 
   return (
