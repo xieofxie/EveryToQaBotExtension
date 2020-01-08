@@ -42,9 +42,16 @@ export class QnADTO {
 }
 
 // TODO use official pacakge
+export class FileDTO {
+    fileName: string;
+    fileUri: string;
+}
+
+// TODO use official pacakge
 export class UpdateKbOperationDTOAdd {
     qnaList: QnADTO[];
     urls: string[];
+    files: FileDTO[];
 }
 
 export class Source {

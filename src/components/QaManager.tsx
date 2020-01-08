@@ -1,10 +1,12 @@
 import * as React from 'react';
 import { Collapse } from 'react-collapse';
-import { CreateKbDTO, Event, QnAMakerEndpoint, QnAMakerEndpointEx, Source, SourceEvent } from '../models/Event';
+import { CreateKbDTO, Event, FileDTO, QnAMakerEndpoint, QnAMakerEndpointEx, Source, SourceEvent, SourceType, UpdateKbOperationDTOAdd } from '../models/Event';
 import { Element } from 'react-scroll'
+import axios from "axios";
 
 export interface QaManagerProps {
     qnAs: { [index: string]: QnAMakerEndpointEx },
+    fileHostUrl?: string,
     syncToThis: Function,
     pushEvent: Function,
     clickDoSync: Function,
@@ -51,6 +53,7 @@ export class QaManager extends React.Component<QaManagerProps, QaManagerState> {
     };
 
     QnAItem = (props: {qnA: QnAMakerEndpointEx}) => {
+        const { fileHostUrl } = this.props;
         const { qnA } = props;
         const divStyle = {
             border: '1px solid black'
@@ -60,13 +63,49 @@ export class QaManager extends React.Component<QaManagerProps, QaManagerState> {
                 Name: <InputWithButtonComponent init={qnA.name} button='Update' onClick={(name)=>{this.clickUpdateName(qnA.knowledgeBaseId, name)}}/>
                 {qnA.enable?'Enabled':'Disabled'}
                 <button onClick={()=>{this.clickToggleEnable(qnA.knowledgeBaseId, !qnA.enable)}}>{qnA.enable?'Disable':'Enable'}</button>
-                <button onClick={()=>{this.clickSyncToThis(qnA.knowledgeBaseId)}}>Sync To This</button>
+                <button onClick={()=>{this.clickSyncToThis(qnA.knowledgeBaseId)}}>Add/Update To This</button>
+                {fileHostUrl && <label>Add/Update File To This<input type="file" onChange={(e)=>{this.clickAddFile(qnA.knowledgeBaseId, e)}}/></label>}
                 <button onClick={()=>{this.clickDeleteQA(qnA.knowledgeBaseId)}}>Delete</button>
             </div>
             {Object.values(qnA.sources).map(v => {
                 return <this.SourceItem key={v.Id} knowledgeBaseId={qnA.knowledgeBaseId} source={v}/>;
             })}
         </div>);
+    };
+
+    clickAddFile = async (knowledgeBaseId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+        const { fileHostUrl } = this.props;
+        if (!fileHostUrl) return;
+        if (event.target.files == null) return;
+        const file = event.target.files[0];
+        let response = null;
+        try {
+            response = await axios.post(fileHostUrl,
+                file,
+                {
+                    headers: {
+                        'Content-Type': file.type
+                    },
+                    params: {
+                        name: file.name,
+                        type: file.type
+                    }
+                });
+        } catch (error) {
+            //this.props.addDebug(error);
+        }
+        if (response == null) return;
+
+        let value = new SourceEvent();
+        value.KnowledgeBaseId = knowledgeBaseId;
+        value.DTOAdd = new UpdateKbOperationDTOAdd();
+        value.DTOAdd.files = [new FileDTO()];
+        value.DTOAdd.files[0].fileName = file.name;
+        value.DTOAdd.files[0].fileUri = `${fileHostUrl}?id=${String(response.data)}`;
+        value.Id = file.name;
+        value.Description = `${file.name} ${String(file.size)}`;
+        value.Type = SourceType.File;
+        this.props.pushEvent(Event.AddSource, value, true);
     };
 
     clickCreateQA = (name: string) => {

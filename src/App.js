@@ -70,6 +70,7 @@ function App(props) {
     <div className="App">
       <QaManager
         qnAs={qnAs}
+        fileHostUrl={process.env.REACT_APP_FILE_HOST_URL}
         syncToThis={clickSyncToThis}
         pushEvent={pushEvent}
         clickDoSync={clickDoSync}
