@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Collapse } from 'react-collapse';
-import { CreateKbDTO, Event, FileDTO, QnAMakerEndpoint, QnAMakerEndpointEx, Source, SourceEvent, SourceType, UpdateKbOperationDTOAdd } from '../models/Event';
+import { AddSourceEvent, DelSourceEvent, Event, QnAMakerEndpoint, QnAMakerEndpointEx, Source } from '../models/Event';
+import { QnAMakerModels } from '@azure/cognitiveservices-qnamaker';
 import { Element } from 'react-scroll'
 import axios from "axios";
 
@@ -47,7 +48,7 @@ export class QaManager extends React.Component<QaManagerProps, QaManagerState> {
 
     SourceItem = (props: {knowledgeBaseId: string, source: Source}) => {
         return (<div>
-            Id: {props.source.Id} Description: {props.source.Description}
+            Id: {props.source.id} Description: {props.source.description}
             <button onClick={() => {this.clickDeleteSource(props.knowledgeBaseId, props.source)}}>Delete</button>
         </div>)
     };
@@ -68,7 +69,7 @@ export class QaManager extends React.Component<QaManagerProps, QaManagerState> {
                 <button onClick={()=>{this.clickDeleteQA(qnA.knowledgeBaseId)}}>Delete</button>
             </div>
             {Object.values(qnA.sources).map(v => {
-                return <this.SourceItem key={v.Id} knowledgeBaseId={qnA.knowledgeBaseId} source={v}/>;
+                return <this.SourceItem key={v.id} knowledgeBaseId={qnA.knowledgeBaseId} source={v}/>;
             })}
         </div>);
     };
@@ -96,20 +97,21 @@ export class QaManager extends React.Component<QaManagerProps, QaManagerState> {
         }
         if (response == null) return;
 
-        let value = new SourceEvent();
-        value.KnowledgeBaseId = knowledgeBaseId;
-        value.DTOAdd = new UpdateKbOperationDTOAdd();
-        value.DTOAdd.files = [new FileDTO()];
-        value.DTOAdd.files[0].fileName = file.name;
-        value.DTOAdd.files[0].fileUri = `${fileHostUrl}?id=${String(response.data)}`;
-        value.Id = file.name;
-        value.Description = `${file.name} ${String(file.size)}`;
-        value.Type = SourceType.File;
+        let value: AddSourceEvent = {
+            knowledgeBaseId: knowledgeBaseId,
+            filesDescription: [`${file.name} ${String(file.size)}`],
+            files: [{
+                fileName: file.name,
+                fileUri: `${fileHostUrl}?id=${String(response.data)}`
+            }]
+        };
         this.props.pushEvent(Event.AddSource, value, true);
     };
 
     clickCreateQA = (name: string) => {
-        const value = new CreateKbDTO();
+        const value: QnAMakerModels.CreateKbDTO = {
+            name: name
+        };
         value.name = name;
         this.props.pushEvent(Event.CreateQnA, value, true);
     }
@@ -143,10 +145,9 @@ export class QaManager extends React.Component<QaManagerProps, QaManagerState> {
     };
 
     clickDeleteSource = async (knowledgeBaseId: string, source: Source) => {
-        const value = new SourceEvent();
-        value.KnowledgeBaseId = knowledgeBaseId;
-        value.Id = source.Id;
-        value.Type = source.Type;
+        const value = new DelSourceEvent();
+        value.knowledgeBaseId = knowledgeBaseId;
+        value.ids = [source.id];
         this.props.pushEvent(Event.DelSource, value, true);
     }
 

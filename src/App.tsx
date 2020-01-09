@@ -1,20 +1,20 @@
 import React from 'react';
 import './App.css';
-import { Event, SourceEvent, SourceType, UpdateKbOperationDTOAdd } from './models/Event';
+import { AddSourceEvent, Event } from './models/Event';
 import { QaManager } from "./components/QaManager";
 import { WebChat } from "./components/WebChat";
-/*global chrome*/
+declare let chrome: { tabs: any };
 
-function App(props) {
+function App(props: { store: any, eventDispatcher: any}) {
   const tempUserId = 'TempUserId';
-  let toDispatch = [];
+  let toDispatch: any[] = [];
 
   const [ qnAs, setQnAs ] = React.useState({});
   const { store, eventDispatcher } = props;
-  const webChatToken = process.env.REACT_APP_WEB_CHAT_TOKEN;
+  const webChatToken = String(process.env.REACT_APP_WEB_CHAT_TOKEN);
 
   React.useEffect(()=>{
-    const eventListener = eventDispatcher.register((event) => {
+    const eventListener = eventDispatcher.register((event: {name:string, value:any}) => {
       if (event.name === Event.GetQnA) {
         setQnAs(event.value);
       }
@@ -22,7 +22,7 @@ function App(props) {
     return ()=>{eventDispatcher.unregister(eventListener)};
   });
 
-  const addDebug = (error) => {
+  const addDebug = (error: any) => {
 
   };
 
@@ -37,7 +37,7 @@ function App(props) {
     // setTimeout(() => {this.addDebug(`Sent ${toDispatch} configs.`);}, 1000);
   };
 
-  const pushEvent = (name, value, sync = false) => {
+  const pushEvent = (name: string, value: any, sync = false) => {
     toDispatch.push({
       type: 'WEB_CHAT/SEND_EVENT',
       payload: {name: name, value: value}
@@ -50,17 +50,15 @@ function App(props) {
     }
   };
 
-  const clickSyncToThis = async (knowledgeBaseId) => {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+  const clickSyncToThis = async (knowledgeBaseId: string) => {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs: any[]) {
       const activeTab = tabs[0];
  
-      let value = new SourceEvent();
-      value.KnowledgeBaseId = knowledgeBaseId;
-      value.DTOAdd = new UpdateKbOperationDTOAdd();
-      value.DTOAdd.urls = [activeTab.url];
-      value.Id = activeTab.url;
-      value.Description = activeTab.title;
-      value.Type = SourceType.Url;
+      let value: AddSourceEvent = {
+        knowledgeBaseId: knowledgeBaseId,
+        urlsDescription: [activeTab.title],
+        urls: [activeTab.url]
+      };
 
       pushEvent(Event.AddSource, value, true);
    });
