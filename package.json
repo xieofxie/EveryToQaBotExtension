@@ -9,7 +9,7 @@
     "@testing-library/user-event": "^7.1.2",
     "@types/react-collapse": "^5.0.0",
     "@types/react-scroll": "^1.5.4",
-    "axios": "^0.19.1",
+    "axios": "^0.21.1",
     "botframework-directlinejs": "^0.11.6",
     "botframework-webchat": "^4.7.1",
     "flux": "^3.1.3",
